@@ -1,6 +1,6 @@
 ### Hi there 👋
 
-I'm a Software Architect in Moscow, Russia.
+I'm a Software Architect.
 
 - 📺 I'm currently working at Kouch TV Entertainment company.
 - 😎 I create a Kouch TV backend architecture, organize processes, and implementing it.
