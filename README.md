@@ -1,6 +1,6 @@
 ### Hi there 👋
 
-I'm a Software Architect.
+I'm a Principal Backend & Golang Engineer.
 
 - 📺 I'm currently working at Kouch TV Entertainment company.
 - 😎 I create a Kouch TV backend architecture, organize processes, and implementing it.
