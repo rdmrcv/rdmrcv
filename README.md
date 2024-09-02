@@ -1,23 +1,16 @@
 ### Hi there 👋
 
-I'm a Principal Backend & Golang Engineer.
+I am Roman Domrachev and I am Principal Golang Developer with Tech Lead background.
 
-- 📺 I'm currently working at Kouch TV Entertainment company.
-- 😎 I create a Kouch TV backend architecture, organize processes, and implementing it.
-- ⛓ Work with: `Golang`, `Microservices`, `K8S`, `Kafka`, `Docker`, `Jenkins`.
-- 💬 Points of interest: `Rust`, `Type Script`, `Erlang`.
+I develop feature-rich business applications with maintainability in mind. Ease integration burdens with a contract-based development approach. I always strive for consistency and performance in designed distributed systems. Pay attention to systems monitoring to ensure quality of work.
 
-<!--
-**ligser/ligser** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+Proficient in GoLang. Have significant hands-on experience with related technologies like: `Kafka`, `Kubernetes`, `MongoDB`, `ClickHouse`, `Redis` and `PostgreSQL`, and methods: `CI/CD`, `DevOps`.
 
-Here are some ideas to get you started:
+I communicate with a business team to understand their needs and provide tailored and (cost-)effective solutions which fits business requirements without unnecessary complexity. I take responsibility for the code I own and pay big attention to the product which I work on.
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+- 📺 If you found my profile fit for your company — we can discuss this: [LinkedIn][linkedin], [GoogleMeet][google-meet], [email][email] 😉
+- 😎 I create a [Brandis](https://brandis.us) backend architecture, organize processes, and implementing it.
+
+[google-meet]: https://calendar.app.google/22QXtGxMQ2zLLAjW9
+[linkedin]: https://www.linkedin.com/in/rdmrcv/
+[email]: mailto:r@dmrcv.me
