@@ -8,8 +8,8 @@ Proficient in GoLang. Have significant hands-on experience with related technolo
 
 I communicate with a business team to understand their needs and provide tailored and (cost-)effective solutions which fits business requirements without unnecessary complexity. I take responsibility for the code I own and pay big attention to the product which I work on.
 
+- 😎 I created a [Brandis](https://brandis.us) backend architecture, organize processes, and implementing it.
 - 📺 If you found my profile fit for your company — we can discuss this: [LinkedIn][linkedin], [GoogleMeet][google-meet], [email][email] 😉
-- 😎 I create a [Brandis](https://brandis.us) backend architecture, organize processes, and implementing it.
 
 [google-meet]: https://calendar.app.google/22QXtGxMQ2zLLAjW9
 [linkedin]: https://www.linkedin.com/in/rdmrcv/
