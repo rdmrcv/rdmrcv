@@ -2,7 +2,7 @@
 
 I am Roman Domrachev and I am Principal Golang Developer with Tech Lead background.
 
-I develop feature-rich business applications with maintainability in mind. Ease integration burdens with a contract-based development approach. I always strive for consistency and performance in designed distributed systems. Pay attention to systems monitoring to ensure quality of work.
+I develop feature-rich business applications with maintainability in mind. Ease integration burdens with a contract-based development approach. I always strive for consistency and performance in designed distributed systems. Pay attention to systems observability to ensure quality of work.
 
 Proficient in GoLang. Have significant hands-on experience with related technologies like: `Kafka`, `Kubernetes`, `MongoDB`, `ClickHouse`, `Redis` and `PostgreSQL`, and methods: `CI/CD`, `DevOps`.
 
