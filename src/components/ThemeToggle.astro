@@ -1,0 +1,43 @@
+---
+import type { SupportedLang } from '../utils/i18n';
+
+interface Props {
+  lang: SupportedLang;
+  class?: string;
+}
+
+const { lang, class: className } = Astro.props;
+
+const copy: Record<SupportedLang, {
+  light: string;
+  dark: string;
+  ariaLight: string;
+  ariaDark: string;
+}> = {
+  en: {
+    light: 'Light',
+    dark: 'Dark',
+    ariaLight: 'Switch to light mode',
+    ariaDark: 'Switch to dark mode'
+  },
+  fr: {
+    light: 'Clair',
+    dark: 'Sombre',
+    ariaLight: 'Passer en mode clair',
+    ariaDark: 'Passer en mode sombre'
+  }
+};
+
+const labels = copy[lang];
+---
+<button
+  type="button"
+  class:list={['btn', className]}
+  data-theme-toggle
+  data-theme-label-light={labels.light}
+  data-theme-label-dark={labels.dark}
+  data-theme-aria-light={labels.ariaLight}
+  data-theme-aria-dark={labels.ariaDark}
+>
+  {labels.dark}
+</button>

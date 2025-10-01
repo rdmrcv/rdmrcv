@@ -1,0 +1,152 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import PrimaryNav from "../components/PrimaryNav.astro";
+import type { SupportedLang } from "../utils/i18n";
+
+interface Props {
+    lang: SupportedLang;
+    title: string;
+    description?: string;
+    date: Date;
+    tags?: string[];
+    alternates?: Partial<Record<SupportedLang, string>>;
+    hero?: { src: string; alt: string } | undefined;
+    openGraph?: {
+        title?: string;
+        description?: string;
+        image?: string;
+    };
+    ogImageHash?: string;
+}
+
+const {
+    lang,
+    title,
+    description,
+    date,
+    tags = [],
+    alternates = {},
+    hero,
+    openGraph,
+    ogImageHash,
+} = Astro.props;
+
+const formattedDate = new Intl.DateTimeFormat(lang, {
+    dateStyle: "medium",
+}).format(date);
+const kicker = lang === "fr" ? "Article" : "Feature";
+const canonicalUrl = Astro.url
+    ? new URL(
+          `${Astro.url.pathname}${Astro.url.search}`,
+          Astro.site ?? Astro.url,
+      ).toString()
+    : undefined;
+const ogTitle = openGraph?.title ?? title;
+const ogDescription = openGraph?.description ?? description ?? title;
+const ogVersionSuffix = ogImageHash ? `?v=${ogImageHash}` : "";
+const defaultOgImage = Astro.url
+    ? new URL(`og.png${ogVersionSuffix}`, Astro.url).toString()
+    : undefined;
+const ogImage = openGraph?.image ?? defaultOgImage;
+const twitterCard = ogImage ? "summary_large_image" : "summary";
+---
+
+<BaseLayout lang={lang} title={`${title}`} description={description ?? title}>
+    <Fragment slot="head">
+        {canonicalUrl ? <link rel="canonical" href={canonicalUrl} /> : null}
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={ogTitle} />
+        {
+            ogDescription ? (
+                <meta property="og:description" content={ogDescription} />
+            ) : null
+        }
+        {
+            canonicalUrl ? (
+                <meta property="og:url" content={canonicalUrl} />
+            ) : null
+        }
+        {ogImage ? <meta property="og:image" content={ogImage} /> : null}
+        <meta name="twitter:card" content={twitterCard} />
+        <meta name="twitter:title" content={ogTitle} />
+        {
+            ogDescription ? (
+                <meta name="twitter:description" content={ogDescription} />
+            ) : null
+        }
+        {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
+    </Fragment>
+    <div class="wrap">
+        <PrimaryNav
+            lang={lang}
+            active="posts"
+            alternates={alternates}
+        />
+        <header class="masthead" role="banner">
+            <div class="grid">
+                <div class="span-8">
+                    <div class="kicker">{kicker}</div>
+                    <h1>{title}</h1>
+                    <p class="meta-line">
+                        {formattedDate}
+                        {
+                            tags.length ? (
+                                <>
+                                    {" · "}
+                                    {tags.join(" · ")}
+                                </>
+                            ) : null
+                        }
+                    </p>
+                </div>
+                <div class="span-4" style="align-self:end;justify-self:end">
+                    <div class="controls">
+                        <a class="btn" href={`/${lang}/posts/`}
+                            >{
+                                lang === "fr"
+                                    ? "Retour aux articles"
+                                    : "Back to posts"
+                            }</a
+                        >
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="article">
+            {
+                hero ? (
+                    <figure>
+                        <img
+                            src={hero.src}
+                            alt={hero.alt}
+                            class="chart"
+                            loading="lazy"
+                        />
+                    </figure>
+                ) : null
+            }
+            <div class="prose">
+                <slot />
+            </div>
+            <footer>
+                <small
+                    >{
+                        lang === "fr"
+                            ? "Merci de votre lecture."
+                            : "Thanks for reading."
+                    }</small
+                >
+                <small
+                    ><a href={`/${lang}/`}
+                        >{
+                            lang === "fr"
+                                ? "Retour à la page À propos"
+                                : "Back to About"
+                        }</a
+                    ></small
+                >
+            </footer>
+        </main>
+    </div>
+</BaseLayout>

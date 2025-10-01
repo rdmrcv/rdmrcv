@@ -1,0 +1,39 @@
+---
+import { SUPPORTED_LANGS, type SupportedLang } from '../utils/i18n';
+
+interface Props {
+  currentLang: SupportedLang;
+  alternates?: Partial<Record<SupportedLang, string>>;
+  class?: string;
+}
+
+const {
+  currentLang,
+  alternates = {},
+  class: className
+} = Astro.props;
+
+const nextLang = SUPPORTED_LANGS.find((lang) => lang !== currentLang);
+
+if (!nextLang) {
+  return null;
+}
+
+const href = alternates[nextLang];
+
+if (!href) {
+  return null;
+}
+
+const label = `${currentLang.toUpperCase()} / ${nextLang.toUpperCase()}`;
+const ariaLabel = `Switch language to ${nextLang.toUpperCase()}`;
+---
+<a
+  class={className}
+  href={href}
+  hreflang={nextLang}
+  data-lang-switch
+  aria-label={ariaLabel}
+>
+  {label}
+</a>
