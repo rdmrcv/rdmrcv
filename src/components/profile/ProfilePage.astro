@@ -1,0 +1,192 @@
+---
+import type { CollectionEntry } from "astro:content";
+import type { AstroComponentFactory } from "astro/runtime/server/index.js";
+import type { SupportedLang } from "../../utils/i18n";
+import Toolbox from "./Toolbox.astro";
+import ExperienceItem from "./ExperienceItem.astro";
+import ContactLinks from "./ContactLinks.astro";
+import { profileI18n } from "../../i18n/profile";
+
+interface Props {
+    lang: SupportedLang;
+    profile: CollectionEntry<"profile">;
+    Content: AstroComponentFactory;
+}
+
+const { lang, profile, Content } = Astro.props;
+const data = profile.data;
+const strings = profileI18n[lang];
+const writing = data.writing ?? [];
+const projects = data.projects ?? [];
+const hasWriting = writing.length > 0;
+const hasProjects = projects.length > 0;
+---
+
+<section class="profile-page" aria-labelledby="profile-hero">
+    <header class="masthead" role="banner" id="profile-hero">
+        <div class="grid">
+            <div class="span-12 hero-text">
+                <h1>{data.name}</h1>
+                <p class="hero-title">{data.title}</p>
+                {data.kicker ? <p class="lead">{data.kicker}</p> : null}
+                <p class="meta-line">{data.location}</p>
+                {
+                    data.openTo || data.relocation ? (
+                        <ul class="hero-meta">
+                            {data.openTo ? (
+                                <li>
+                                    <span class="hero-meta__label">
+                                        {strings.openTo}
+                                    </span>
+                                    <span>{data.openTo}</span>
+                                </li>
+                            ) : null}
+                            {data.relocation ? (
+                                <li>
+                                    <span class="hero-meta__label">
+                                        {strings.relocation}
+                                    </span>
+                                    <span>{data.relocation}</span>
+                                </li>
+                            ) : null}
+                        </ul>
+                    ) : null
+                }
+                {
+                    data.contact ? (
+                        <div class="hero-contact hero-controls">
+                            <ContactLinks
+                                contact={data.contact}
+                                strings={{
+                                    printCV: strings.printCV,
+                                    downloadCV: strings.downloadCV,
+                                    emailLabel: strings.emailLabel,
+                                    linkedinLabel: strings.linkedinLabel,
+                                    githubLabel: strings.githubLabel,
+                                    cvLabel: strings.cvLabel,
+                                }}
+                            />
+                        </div>
+                    ) : null
+                }
+            </div>
+        </div>
+    </header>
+</section>
+
+<main>
+    <section
+        class="grid"
+        id="about-section"
+        aria-labelledby="about-section-title"
+    >
+        <div class="span-12 module">
+            <div class="label" id="about-section-title">{strings.about}</div>
+            <div class="about-body">
+                <Content />
+            </div>
+        </div>
+    </section>
+
+    <section
+        class="grid experience"
+        id="experience"
+        aria-labelledby="experience-title"
+    >
+        <div class="span-9 module">
+            <h2 id="experience-title">{strings.experience}</h2>
+        </div>
+        <div class="span-12 experience-list">
+            {
+                data.experience.map((item) => (
+                    <ExperienceItem
+                        {...item}
+                        breakdownLabel={strings.breakdown}
+                    />
+                ))
+            }
+        </div>
+    </section>
+
+    <section class="grid" id="toolbox" aria-labelledby="toolbox-title">
+        <div class="span-12 module">
+            <div class="label" id="toolbox-title">{strings.toolbox}</div>
+            <Toolbox items={data.toolbox} />
+        </div>
+    </section>
+
+    {
+        hasWriting ? (
+            <section class="grid" id="writing" aria-labelledby="writing-title">
+                <div class="span-12 module">
+                    <div class="label" id="writing-title">
+                        {strings.writing}
+                    </div>
+                    <ul class="writing-list">
+                        {writing.map((entry) => (
+                            <li>
+                                <a href={entry.href}>{entry.title}</a>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </section>
+        ) : null
+    }
+
+    {
+        hasProjects ? (
+            <section
+                class="grid"
+                id="projects"
+                aria-labelledby="projects-title"
+            >
+                <div class="span-12 module">
+                    <div class="label" id="projects-title">
+                        {strings.projects}
+                    </div>
+                </div>
+                {projects.map((project) => (
+                    <article class="span-12 module project-card">
+                        <h3>{project.name}</h3>
+                        <p>{project.blurb}</p>
+                        {project.href ? (
+                            <p>
+                                <a href={project.href}>View project</a>
+                            </p>
+                        ) : null}
+                    </article>
+                ))}
+            </section>
+        ) : null
+    }
+</main>
+
+<script>
+    import { mountDetailsControls } from "../../scripts/details-controls";
+    if (typeof window !== "undefined") {
+        const bindPrintButton = () => {
+            const button = document.querySelector("[data-print-cv]");
+            if (
+                button instanceof HTMLButtonElement &&
+                button.dataset.printBound !== "true"
+            ) {
+                button.dataset.printBound = "true";
+                button.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    window.print();
+                });
+            }
+        };
+
+        const run = () => {
+            mountDetailsControls(document);
+            bindPrintButton();
+        };
+        if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(() => run());
+        } else {
+            setTimeout(run, 100);
+        }
+    }
+</script>
