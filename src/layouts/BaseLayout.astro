@@ -1,0 +1,159 @@
+---
+import "../styles/theme.css";
+
+const {
+    lang = "en",
+    title = "Roman Domrachev * Principal Backend (Go)",
+    description = "Fast, observable, cost-efficient Go backends.",
+} = Astro.props;
+
+const bodyFontHref =
+    "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=optional";
+const utilFontHref =
+    "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap";
+---
+
+<!doctype html>
+<html lang={lang} data-theme="auto">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <link
+            rel="preconnect"
+            href="https://fonts.googleapis.com"
+            crossorigin
+        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="preload" as="style" href={bodyFontHref} />
+        <link rel="preload" as="style" href={utilFontHref} />
+        <link rel="stylesheet" href={bodyFontHref} />
+        <link rel="stylesheet" href={utilFontHref} />
+        <slot name="head" />
+    </head>
+    <body>
+        <slot />
+        <script is:inline>
+            (() => {
+                const root = document.documentElement;
+                const randomHue = () => Math.floor(Math.random() * 360);
+                const lightHue = randomHue();
+                const darkHue = randomHue();
+                root.style.setProperty("--accent-light-h", `${lightHue}deg`);
+                root.style.setProperty("--accent-dark-h", `${darkHue}deg`);
+                const stored =
+                    typeof localStorage !== "undefined"
+                        ? localStorage.getItem("theme")
+                        : null;
+                const prefersDark =
+                    window.matchMedia &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches;
+                const motionQuery = window.matchMedia
+                    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+                    : null;
+                let prefersReducedMotion = !!(
+                    motionQuery && motionQuery.matches
+                );
+                if (
+                    motionQuery &&
+                    typeof motionQuery.addEventListener === "function"
+                ) {
+                    motionQuery.addEventListener("change", (event) => {
+                        prefersReducedMotion = event.matches;
+                    });
+                }
+                const applied =
+                    stored === "dark" || stored === "light"
+                        ? stored
+                        : prefersDark
+                          ? "dark"
+                          : "light";
+
+                const updateToggleLabels = () => {
+                    const current = root.getAttribute("data-theme");
+                    const next = current === "dark" ? "light" : "dark";
+                    document
+                        .querySelectorAll("[data-theme-toggle]")
+                        .forEach((btn) => {
+                            if (!(btn instanceof HTMLElement)) return;
+                            const labelAttr =
+                                btn.getAttribute(`data-theme-label-${next}`) ||
+                                next;
+                            const ariaAttr =
+                                btn.getAttribute(`data-theme-aria-${next}`) ||
+                                `Switch to ${next} mode`;
+                            btn.textContent = labelAttr;
+                            btn.setAttribute("aria-label", ariaAttr);
+                        });
+                };
+
+                root.setAttribute("data-theme", applied);
+                updateToggleLabels();
+
+                document.addEventListener("click", (event) => {
+                    const target =
+                        event.target instanceof Element
+                            ? event.target.closest("[data-theme-toggle]")
+                            : null;
+                    if (!target) return;
+
+                    const currentTheme =
+                        root.getAttribute("data-theme") === "dark"
+                            ? "dark"
+                            : "light";
+                    const next = currentTheme === "dark" ? "light" : "dark";
+                    if (!prefersReducedMotion) {
+                        const rect = target.getBoundingClientRect();
+                        const hasPointer =
+                            typeof event === "object" &&
+                            event !== null &&
+                            "clientX" in event &&
+                            "clientY" in event &&
+                            typeof event.clientX === "number" &&
+                            typeof event.clientY === "number";
+                        const clickX = hasPointer
+                            ? event.clientX
+                            : rect.left + rect.width / 2;
+                        const clickY = hasPointer
+                            ? event.clientY
+                            : rect.top + rect.height / 2;
+                        const diameter =
+                            Math.max(window.innerWidth, window.innerHeight) * 2;
+                        const ripple = document.createElement("span");
+                        ripple.className = "theme-ripple";
+                        ripple.dataset.theme = currentTheme;
+                        ripple.style.width = `${diameter}px`;
+                        ripple.style.height = `${diameter}px`;
+                        ripple.style.left = `${clickX}px`;
+                        ripple.style.top = `${clickY}px`;
+                        document.body.appendChild(ripple);
+                        ripple.addEventListener(
+                            "animationend",
+                            () => ripple.remove(),
+                            { once: true },
+                        );
+                    }
+
+                    document.body.classList.add("theme-transitioning");
+                    setTimeout(
+                        () =>
+                            document.body.classList.remove(
+                                "theme-transitioning",
+                            ),
+                        520,
+                    );
+
+                    requestAnimationFrame(() => {
+                        root.setAttribute("data-theme", next);
+                        updateToggleLabels();
+                        try {
+                            localStorage.setItem("theme", next);
+                        } catch (error) {}
+                    });
+                });
+            })();
+        </script>
+        <slot name="afterBody" />
+    </body>
+</html>

@@ -1,0 +1,78 @@
+---
+interface Contact {
+  email?: string;
+  linkedin?: string;
+  github?: string;
+  pdf?: string;
+}
+
+interface Props {
+  contact: Contact;
+  strings: {
+    printCV: string;
+    emailLabel: string;
+    linkedinLabel: string;
+    githubLabel: string;
+    cvLabel: string;
+  };
+}
+
+const { contact, strings } = Astro.props;
+const items = [
+  contact.email
+    ? {
+        type: 'email' as const,
+        label: strings.emailLabel,
+        value: contact.email,
+        href: `mailto:${contact.email}`
+      }
+    : null,
+  contact.linkedin
+    ? {
+        type: 'linkedin' as const,
+        label: strings.linkedinLabel,
+        value: contact.linkedin.replace(/^https?:\/\//, ''),
+        href: contact.linkedin
+      }
+    : null,
+  contact.github
+    ? {
+        type: 'github' as const,
+        label: strings.githubLabel,
+        value: contact.github.replace(/^https?:\/\//, ''),
+        href: contact.github
+      }
+    : null
+].filter((item): item is {
+  type: 'email' | 'linkedin' | 'github';
+  label: string;
+  value: string;
+  href: string;
+} => Boolean(item));
+---
+<div class="contact-links">
+  {items.length ? (
+    <ul>
+      {items.map((item) => (
+        <li>
+          <span class="contact-label">{item.label}</span>
+          <a class="contact-link" href={item.href}>
+            <span class="contact-link__text">{item.value}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  ) : null}
+  {contact.pdf ? (
+    <div class="contact-actions">
+      <button
+        class="btn primary"
+        type="button"
+        data-print-cv
+        aria-label={`${strings.cvLabel}: ${strings.printCV}`}
+      >
+        {strings.printCV}
+      </button>
+    </div>
+  ) : null}
+</div>

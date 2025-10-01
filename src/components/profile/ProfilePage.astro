@@ -1,0 +1,197 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+import type { SupportedLang } from '../../utils/i18n';
+import Highlights from './Highlights.astro';
+import Toolbox from './Toolbox.astro';
+import ExperienceItem from './ExperienceItem.astro';
+import ContactLinks from './ContactLinks.astro';
+import { profileI18n } from '../../i18n/profile';
+import { Picture } from 'astro:assets';
+
+interface Props {
+  lang: SupportedLang;
+  profile: CollectionEntry<'profile'>;
+  Content: AstroComponentFactory;
+}
+
+const { lang, profile, Content } = Astro.props;
+const data = profile.data;
+const strings = profileI18n[lang];
+const photoAlt = `${strings.heroAltPrefix} ${data.name}`;
+const writing = data.writing ?? [];
+const projects = data.projects ?? [];
+const hasWriting = writing.length > 0;
+const hasProjects = projects.length > 0;
+const hasExpandable = data.experience.some((item) => typeof item.breakdown === 'string' && item.breakdown.trim().length > 0);
+const HERO_MAX_WIDTH = 240;
+
+const { width: sourceWidth, height: sourceHeight } = data.photo;
+const scaledWidth = Math.min(sourceWidth, HERO_MAX_WIDTH);
+const scaledHeight = Math.round((scaledWidth * sourceHeight) / sourceWidth);
+const photoShellStyle = `aspect-ratio: ${sourceWidth} / ${sourceHeight}; width: min(100%, ${scaledWidth}px); max-width: ${HERO_MAX_WIDTH}px; height: ${scaledHeight}px; display: block;`;
+---
+<section class="profile-page" aria-labelledby="profile-hero">
+  <header class="masthead" role="banner" id="profile-hero">
+    <div class="grid">
+      <div class="span-8 hero-text">
+        <div class="kicker">{strings.about}</div>
+        <h1>{data.name}</h1>
+        <p class="hero-title">{data.title}</p>
+        {data.kicker ? <p class="lead">{data.kicker}</p> : null}
+        <p class="meta-line">{data.location}</p>
+        {(data.openTo || data.relocation) ? (
+          <ul class="hero-meta">
+            {data.openTo ? (
+              <li>
+                <span class="hero-meta__label">{strings.openTo}</span>
+                <span>{data.openTo}</span>
+              </li>
+            ) : null}
+            {data.relocation ? (
+              <li>
+                <span class="hero-meta__label">{strings.relocation}</span>
+                <span>{data.relocation}</span>
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+        {data.contact ? (
+          <div class="hero-contact hero-controls">
+            <ContactLinks
+              contact={data.contact}
+              strings={{
+                printCV: strings.printCV,
+                emailLabel: strings.emailLabel,
+                linkedinLabel: strings.linkedinLabel,
+                githubLabel: strings.githubLabel,
+                cvLabel: strings.cvLabel
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
+      <div class="span-4 hero-photo">
+        <div style={photoShellStyle}>
+          <Picture
+            src={data.photo}
+            alt={photoAlt}
+            width={scaledWidth}
+            height={scaledHeight}
+            loading="eager"
+            formats={['webp']}
+            fetchpriority="high"
+            decoding="async"
+            fit="cover"
+            sizes="(max-width: 640px) min(60vw, 240px), 240px"
+          />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid" id="about-section" aria-labelledby="about-section-title">
+      <div class="span-12 module">
+        <div class="label" id="about-section-title">{strings.about}</div>
+        <div class="about-body">
+          <Content />
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" id="highlights" aria-labelledby="highlights-title">
+      <div class="span-12 module">
+        <div class="label" id="highlights-title">{strings.highlights}</div>
+        <Highlights items={data.highlights} />
+      </div>
+    </section>
+
+    <section class="grid experience" id="experience" aria-labelledby="experience-title">
+      <div class="span-9 module">
+        <h2 id="experience-title">{strings.experience}</h2>
+      </div>
+      {hasExpandable ? (
+        <div class="span-3 module experience-controls" aria-hidden="false">
+          <div class="controls">
+            <button class="btn" id="expand-all" type="button">{strings.expandAll}</button>
+            <button class="btn" id="collapse-all" type="button">{strings.collapseAll}</button>
+          </div>
+        </div>
+      ) : null}
+      <div class="span-12 experience-list">
+        {data.experience.map((item) => (
+          <ExperienceItem
+            {...item}
+            breakdownLabel={strings.breakdown}
+          />
+        ))}
+      </div>
+    </section>
+
+    <section class="grid" id="toolbox" aria-labelledby="toolbox-title">
+      <div class="span-12 module">
+        <div class="label" id="toolbox-title">{strings.toolbox}</div>
+        <Toolbox items={data.toolbox} />
+      </div>
+    </section>
+
+    {hasWriting ? (
+      <section class="grid" id="writing" aria-labelledby="writing-title">
+        <div class="span-12 module">
+          <div class="label" id="writing-title">{strings.writing}</div>
+          <ul class="writing-list">
+            {writing.map((entry) => (
+              <li>
+                <a href={entry.href}>{entry.title}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ) : null}
+
+    {hasProjects ? (
+      <section class="grid" id="projects" aria-labelledby="projects-title">
+        <div class="span-12 module">
+          <div class="label" id="projects-title">{strings.projects}</div>
+        </div>
+        {projects.map((project) => (
+          <article class="span-12 module project-card">
+            <h3>{project.name}</h3>
+            <p>{project.blurb}</p>
+            {project.href ? (
+              <p><a href={project.href}>View project</a></p>
+            ) : null}
+          </article>
+        ))}
+      </section>
+    ) : null}
+  </main>
+</section>
+
+<script>
+  import { mountDetailsControls } from '../../scripts/details-controls';
+  if (typeof window !== 'undefined') {
+    const bindPrintButton = () => {
+      const button = document.querySelector('[data-print-cv]');
+      if (button instanceof HTMLButtonElement && button.dataset.printBound !== 'true') {
+        button.dataset.printBound = 'true';
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          window.print();
+        });
+      }
+    };
+
+    const run = () => {
+      mountDetailsControls(document);
+      bindPrintButton();
+    };
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => run());
+    } else {
+      window.setTimeout(run, 100);
+    }
+  }
+</script>

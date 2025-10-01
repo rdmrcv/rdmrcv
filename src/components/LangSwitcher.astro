@@ -1,0 +1,52 @@
+---
+import { SUPPORTED_LANGS, type SupportedLang } from '../utils/i18n';
+
+interface Props {
+  currentLang: SupportedLang;
+  alternates?: Partial<Record<SupportedLang, string>>;
+  fallbacks?: Partial<Record<SupportedLang, string>>;
+  class?: string;
+}
+
+const {
+  currentLang,
+  alternates = {},
+  fallbacks = {},
+  class: className
+} = Astro.props;
+
+const nextLang = SUPPORTED_LANGS.find((lang) => lang !== currentLang);
+
+if (!nextLang) {
+  return null;
+}
+
+const alternateHref = alternates[nextLang];
+const fallbackHref = fallbacks[nextLang];
+const href = alternateHref ?? fallbackHref;
+
+if (!href) {
+  return null;
+}
+
+const usesFallback = !alternateHref && !!fallbackHref;
+const unavailableCopy: Record<SupportedLang, string> = {
+  en: 'No translation yet',
+  fr: 'Pas encore de traduction'
+};
+
+const label = `${currentLang.toUpperCase()} / ${nextLang.toUpperCase()}${usesFallback ? ` · ${unavailableCopy[currentLang]}` : ''}`;
+const ariaLabel = usesFallback
+  ? `Switch language to ${nextLang.toUpperCase()}, ${unavailableCopy[currentLang]}`
+  : `Switch language to ${nextLang.toUpperCase()}`;
+---
+<a
+  class={className}
+  href={href}
+  hreflang={nextLang}
+  data-lang-switch
+  data-lang-fallback={usesFallback ? 'true' : undefined}
+  aria-label={ariaLabel}
+>
+  {label}
+</a>

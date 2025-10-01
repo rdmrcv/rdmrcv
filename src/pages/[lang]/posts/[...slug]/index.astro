@@ -1,0 +1,83 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import PostLayout from '../../../../layouts/PostLayout.astro';
+import { SUPPORTED_LANGS, type SupportedLang } from '../../../../utils/i18n';
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+
+  const translationGroups = new Map<string, CollectionEntry<'posts'>[]>();
+  for (const entry of allPosts) {
+    const key = entry.data.translationKey ?? entry.slug.split('/').slice(1).join('/');
+    const bucket = translationGroups.get(key);
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      translationGroups.set(key, [entry]);
+    }
+  }
+
+  return allPosts
+    .filter((entry) => SUPPORTED_LANGS.includes(entry.data.lang as SupportedLang))
+    .map((entry) => {
+      const [langSegment, ...slugSegments] = entry.slug.split('/');
+      const lang = langSegment as SupportedLang;
+      const slugPath = slugSegments.join('/');
+      const key = entry.data.translationKey ?? slugPath;
+      const translations = translationGroups.get(key) ?? [];
+
+      const alternates = Object.fromEntries(
+        translations
+          .filter((other) => other.id !== entry.id)
+          .map((other) => {
+            const otherSlug = other.slug.split('/').slice(1).join('/');
+            return [other.data.lang as SupportedLang, `/${other.data.lang}/posts/${otherSlug}/`];
+          })
+      ) as Partial<Record<SupportedLang, string>>;
+
+      const fallbackAlternates = Object.fromEntries(
+        SUPPORTED_LANGS
+          .filter((supportedLang) => supportedLang !== lang)
+          .filter((supportedLang) => !translations.some((other) => other.data.lang === supportedLang))
+          .map((missingLang) => [missingLang, `/${missingLang}/`])
+      ) as Partial<Record<SupportedLang, string>>;
+
+      return {
+        params: {
+          lang,
+          slug: slugPath
+        },
+        props: {
+          entry,
+          alternates,
+          fallbackAlternates
+        }
+      };
+    });
+}
+
+type PostEntry = CollectionEntry<'posts'>;
+
+interface Props {
+  entry: PostEntry;
+  alternates: Partial<Record<SupportedLang, string>>;
+  fallbackAlternates: Partial<Record<SupportedLang, string>>;
+}
+
+const { entry, alternates, fallbackAlternates } = Astro.props as Props;
+const lang = entry.data.lang as SupportedLang;
+const { Content } = await entry.render();
+---
+<PostLayout
+  lang={lang}
+  title={entry.data.title}
+  description={entry.data.description}
+  date={entry.data.date}
+  tags={entry.data.tags}
+  alternates={alternates}
+  fallbackAlternates={fallbackAlternates}
+  hero={entry.data.hero}
+  openGraph={entry.data.openGraph}
+>
+  <Content />
+</PostLayout>
