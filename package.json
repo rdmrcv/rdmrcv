@@ -1,0 +1,25 @@
+{
+  "name": "rdmrcv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "pdf:build": "ASTRO_PDF=true astro build"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/manrope": "^5.2.8",
+    "@fontsource/playfair-display": "^5.2.8",
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^5.16.6",
+    "astro-pdf": "^1.7.2",
+    "satori": "^0.18.3",
+    "sharp": "^0.34.4",
+    "typescript": "^5.9.3"
+  }
+}

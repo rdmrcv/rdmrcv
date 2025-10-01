@@ -1,0 +1,15 @@
+---
+import ProfileRoute from '../../components/profile/ProfileRoute.astro';
+import { getCollection } from 'astro:content';
+import { type SupportedLang } from '../../utils/i18n';
+
+export async function getStaticPaths() {
+  const profiles = await getCollection('profile');
+  return profiles.map((entry) => ({ params: { lang: entry.slug as SupportedLang } }));
+}
+
+const params = Astro.params as { lang: SupportedLang };
+const lang = params.lang;
+const canonicalPath = `/${lang}/`;
+---
+<ProfileRoute lang={lang} canonicalPath={canonicalPath} />
