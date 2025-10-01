@@ -1,0 +1,65 @@
+---
+import LangSwitcher from './LangSwitcher.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import type { SupportedLang } from '../utils/i18n';
+
+interface Props {
+  lang: SupportedLang;
+  active: 'about' | 'posts';
+  alternates?: Partial<Record<SupportedLang, string>>;
+  items?: Array<'about' | 'posts'>;
+  homeHref?: string;
+}
+
+const {
+  lang,
+  active,
+  alternates = {},
+  items: requestedItems,
+  homeHref
+} = Astro.props as Props;
+
+const labels: Record<SupportedLang, Record<'about' | 'posts', string>> = {
+  en: {
+    about: 'About',
+    posts: 'Posts'
+  },
+  fr: {
+    about: 'À propos',
+    posts: 'Articles'
+  }
+};
+
+const ariaLabel: Record<SupportedLang, string> = {
+  en: 'Primary',
+  fr: 'Navigation principale'
+};
+
+const baseItems = (requestedItems?.length ? requestedItems : ['about', 'posts']) as Array<'about' | 'posts'>;
+const uniqueItems = Array.from(new Set(baseItems)) as Array<'about' | 'posts'>;
+const itemsToRender = uniqueItems.includes(active) ? uniqueItems : [...uniqueItems, active];
+
+const aboutHref = homeHref ?? `/${lang}/`;
+const itemById: Record<'about' | 'posts', { id: 'about' | 'posts'; href: string; label: string }> = {
+  about: { id: 'about', href: aboutHref, label: labels[lang].about },
+  posts: { id: 'posts', href: `/${lang}/posts/`, label: labels[lang].posts }
+};
+
+const items = itemsToRender.map((id) => itemById[id]);
+---
+<nav class="nav" aria-label={ariaLabel[lang]}>
+  <div class="nav-links">
+    {items.map((item) => (
+      <a
+        href={item.href}
+        aria-current={active === item.id ? 'page' : undefined}
+      >
+        {item.label}
+      </a>
+    ))}
+  </div>
+  <div class="controls nav-controls">
+    <LangSwitcher currentLang={lang} alternates={alternates} />
+    <ThemeToggle lang={lang} />
+  </div>
+</nav>

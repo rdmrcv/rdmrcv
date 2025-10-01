@@ -1,0 +1,134 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PrimaryNav from "../PrimaryNav.astro";
+import ProfilePage from "./ProfilePage.astro";
+import { getVersionedOgImage } from "../../utils/og";
+import {
+    DEFAULT_LANG,
+    SUPPORTED_LANGS,
+    type SupportedLang,
+} from "../../utils/i18n";
+
+interface Props {
+    lang: SupportedLang;
+    canonicalPath: string;
+    homeHref?: string;
+}
+
+const { lang, canonicalPath, homeHref } = Astro.props as Props;
+
+const profile = await getEntry("profile", lang);
+
+if (!profile) {
+    throw new Error(`Profile entry for locale "${lang}" not found.`);
+}
+
+const { Content } = await profile.render();
+const plainBody = profile.body.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+const pageDescription = plainBody.length
+    ? plainBody
+    : (profile.data.kicker ?? profile.data.title);
+const ogDescription = profile.data.ogDescription ?? pageDescription;
+const siteUrl = Astro.site ?? new URL("https://dmrcv.me");
+const siteLabel = siteUrl.hostname.replace(/^www\./, "");
+const toAbsolute = (path: string) => new URL(path, siteUrl).toString();
+const canonicalUrl = toAbsolute(canonicalPath);
+const profileEntries = await getCollection("profile");
+const availableLangs = SUPPORTED_LANGS.filter((candidate) =>
+    profileEntries.some((entry) => entry.slug === candidate),
+) as SupportedLang[];
+const navAlternates = Object.fromEntries(
+    availableLangs
+        .filter((other) => other !== lang)
+        .map(
+            (other) =>
+                [other, other === DEFAULT_LANG ? "/" : `/${other}/`] as const,
+        ),
+) as Partial<Record<SupportedLang, string>>;
+const sameAs = [
+    profile.data.contact.linkedin,
+    profile.data.contact.github,
+].filter(Boolean) as string[];
+const { hash: ogImageHash } = await getVersionedOgImage({
+    name: profile.data.name,
+    title: profile.data.title,
+    kicker: profile.data.kicker,
+    location: profile.data.location,
+    openTo: profile.data.openTo,
+    relocation: profile.data.relocation,
+    email: profile.data.contact?.email,
+    siteLabel,
+});
+const ogImagePath = `/${lang}/og.png?v=${ogImageHash}`;
+const ogImageUrl = toAbsolute(ogImagePath);
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: profile.data.name,
+    jobTitle: profile.data.title,
+    description: ogDescription,
+    url: canonicalUrl,
+    image: ogImageUrl,
+    sameAs,
+};
+const postsInLang = await getCollection(
+    "posts",
+    ({ data }) => !data.draft && data.lang === lang,
+);
+const navItems = (postsInLang.length ? ["about", "posts"] : ["about"]) as Array<
+    "about" | "posts"
+>;
+const resolvedHomeHref = homeHref ?? canonicalPath;
+const alternateLinks = availableLangs.map((supportedLang) => {
+    const hrefPath =
+        supportedLang === DEFAULT_LANG ? "/" : `/${supportedLang}/`;
+    const href = supportedLang === lang ? canonicalUrl : toAbsolute(hrefPath);
+    return [supportedLang, href] as const;
+});
+---
+
+<BaseLayout
+    lang={lang}
+    title={`${profile.data.name} · ${profile.data.title}`}
+    description={ogDescription}
+>
+    <Fragment slot="head">
+        <link rel="canonical" href={canonicalUrl} />
+        {
+            alternateLinks.map(([supportedLang, href]) => (
+                <link rel="alternate" hreflang={supportedLang} href={href} />
+            ))
+        }
+        <meta property="og:type" content="profile" />
+        <meta
+            property="og:title"
+            content={`${profile.data.name} · ${profile.data.title}`}
+        />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+            name="twitter:title"
+            content={`${profile.data.name} · ${profile.data.title}`}
+        />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImageUrl} />
+        <script
+            type="application/ld+json"
+            is:inline
+            set:html={JSON.stringify(jsonLd)}
+        />
+    </Fragment>
+    <div class="wrap">
+        <PrimaryNav
+            lang={lang}
+            active="about"
+            alternates={navAlternates}
+            items={navItems}
+            homeHref={resolvedHomeHref}
+        />
+        <ProfilePage lang={lang} profile={profile} Content={Content} />
+    </div>
+</BaseLayout>

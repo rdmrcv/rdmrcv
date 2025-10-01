@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PrimaryNav from '../../../components/PrimaryNav.astro';
+import { getCollection } from 'astro:content';
+import { SUPPORTED_LANGS, type SupportedLang } from '../../../utils/i18n';
+
+export async function getStaticPaths() {
+  const publishedPosts = await getCollection('posts', ({ data }) => !data.draft);
+  const languagesWithPosts = SUPPORTED_LANGS.filter((candidate) =>
+    publishedPosts.some((entry) => entry.data.lang === candidate)
+  );
+  return languagesWithPosts.map((lang) => ({ params: { lang } }));
+}
+
+const params = Astro.params as { lang: SupportedLang };
+const lang = params.lang;
+
+const copy = {
+  en: {
+    pageTitle: 'Posts · Roman Domrachev',
+    description: 'Writing and notes from Roman Domrachev',
+    kicker: 'Posts',
+    headline: 'Notes & articles',
+    lead: 'Case studies and engineering notes captured in the same editorial grid.',
+    latest: 'Latest',
+    empty: 'No posts yet. Add markdown files under <code>src/content/posts/en</code>.'
+  },
+  fr: {
+    pageTitle: 'Articles · Roman Domrachev',
+    description: 'Billets techniques et études',
+    kicker: 'Articles',
+    headline: 'Notes & études',
+    lead: 'Cas pratiques et retours d’expérience dans la même grille éditoriale.',
+    latest: 'Derniers articles',
+    empty: 'Aucun article pour l’instant. Ajoutez des fichiers markdown sous <code>src/content/posts/fr</code>.'
+  }
+} as const satisfies Record<SupportedLang, {
+  pageTitle: string;
+  description: string;
+  kicker: string;
+  headline: string;
+  lead: string;
+  latest: string;
+  empty: string;
+}>;
+
+const publishedPosts = await getCollection('posts', ({ data }) => !data.draft);
+const posts = publishedPosts
+  .filter((entry) => entry.data.lang === lang)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const languagesWithPosts = SUPPORTED_LANGS.filter((candidate) =>
+  publishedPosts.some((entry) => entry.data.lang === candidate)
+);
+
+const alternates = Object.fromEntries(
+  languagesWithPosts
+    .filter((other) => other !== lang)
+    .map((other) => [other, `/${other}/posts/`])
+) as Partial<Record<SupportedLang, string>>;
+
+const navItems = (posts.length ? ['about', 'posts'] : ['about']) as Array<'about' | 'posts'>;
+
+const formatDate = (value: Date) => new Intl.DateTimeFormat(lang, { dateStyle: 'medium' }).format(value);
+---
+<BaseLayout lang={lang} title={copy[lang].pageTitle} description={copy[lang].description}>
+  <div class="wrap">
+    <PrimaryNav
+      lang={lang}
+      active="posts"
+      alternates={alternates}
+      items={navItems}
+    />
+    <header class="masthead" role="banner">
+      <div class="grid">
+        <div class="span-12">
+          <div class="kicker">{copy[lang].kicker}</div>
+          <h1>{copy[lang].headline}</h1>
+          <p class="lead">{copy[lang].lead}</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid" aria-labelledby="post-index">
+      <div class="span-12"><h2 id="post-index">{copy[lang].latest}</h2></div>
+      {posts.length ? (
+        posts.map((post) => {
+          const relative = post.slug.split('/').slice(1).join('/');
+          return (
+            <article class="span-12 module project" style="grid-template-columns: 6fr 4fr 2fr;">
+              <div class="title">
+                <h3><a href={`/${lang}/posts/${relative}/`}>{post.data.title}</a></h3>
+              </div>
+              <div>
+                <p>{post.data.description ?? ''}</p>
+              </div>
+              <div class="meta">{formatDate(post.data.date)}</div>
+            </article>
+          );
+        })
+      ) : (
+        <div class="span-12 module">
+          <p set:html={copy[lang].empty}></p>
+        </div>
+      )}
+    </main>
+  </div>
+</BaseLayout>

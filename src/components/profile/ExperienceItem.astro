@@ -1,0 +1,120 @@
+---
+interface LinkItem {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  company: string;
+  role: string;
+  period: string;
+  location: string;
+  summary: string[];
+  breakdown?: string;
+  stack?: string[];
+  links?: LinkItem[];
+  breakdownLabel: string;
+}
+
+const { company, role, period, location, summary, breakdown, stack = [], links = [], breakdownLabel } = Astro.props;
+const hasBreakdown = typeof breakdown === 'string' && breakdown.trim().length > 0;
+const hasStack = stack.length > 0;
+const hasLinks = links.length > 0;
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const renderInline = (value: string) =>
+  escapeHtml(value).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+const renderMarkdownLite = (markdown: string) => {
+  const parts: string[] = [];
+  let paragraph: string[] = [];
+  let list: string[] = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      const text = paragraph.join(' ').trim();
+      if (text) {
+        parts.push(`<p>${renderInline(text)}</p>`);
+      }
+      paragraph = [];
+    }
+  };
+
+  const flushList = () => {
+    if (list.length) {
+      const items = list
+        .map((item) => `<li>${renderInline(item)}</li>`)
+        .join('');
+      parts.push(`<ul>${items}</ul>`);
+      list = [];
+    }
+  };
+
+  markdown
+    .trim()
+    .split(/\n/)
+    .forEach((rawLine) => {
+      const line = rawLine.trim();
+      if (!line) {
+        flushParagraph();
+        flushList();
+        return;
+      }
+
+      if (line.startsWith('- ')) {
+        flushParagraph();
+        list.push(line.replace(/^-\s*/, ''));
+        return;
+      }
+
+      flushList();
+      paragraph.push(line);
+    });
+
+  flushParagraph();
+  flushList();
+
+  return parts.join('');
+};
+
+const breakdownHtml = hasBreakdown ? renderMarkdownLite(breakdown!) : '';
+---
+<article class="experience-item module">
+  <header class="experience-header">
+    <div>
+      <h3>{role} — {company}</h3>
+      <p class="experience-meta">{period} · {location}</p>
+    </div>
+  </header>
+  <div>
+    <ul class="bullets">
+      {summary.map((item) => (
+        <li>{item}</li>
+      ))}
+    </ul>
+    {hasLinks ? (
+      <ul class="experience-links">
+        {links.map((link) => (
+          <li><a href={link.href}>{link.label}</a></li>
+        ))}
+      </ul>
+    ) : null}
+    {hasBreakdown ? (
+      <details class="experience-details">
+        <summary>{breakdownLabel}</summary>
+        <div class="experience-details__body" set:html={breakdownHtml} />
+      </details>
+    ) : null}
+    {hasStack ? (
+      <ul class="experience-stack">
+        {stack.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    ) : null}
+  </div>
+</article>

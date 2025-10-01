@@ -1,0 +1,363 @@
+---
+import "../styles/theme.css";
+
+const {
+    lang = "en",
+    title = "Roman Domrachev * Principal Backend (Go)",
+    description = "Fast, observable, cost-efficient Go backends.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang} data-theme="auto">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta name="theme-color" content="#ff2055" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" sizes="180x180" />
+        <slot name="head" />
+    </head>
+    <body>
+        <slot />
+        <script is:inline>
+            (() => {
+                const root = document.documentElement;
+                const randomHue = () => Math.floor(Math.random() * 360);
+                const lightHue = randomHue();
+                const darkHue = randomHue();
+                root.style.setProperty("--accent-light-h", `${lightHue}deg`);
+                root.style.setProperty("--accent-dark-h", `${darkHue}deg`);
+                const dotSeed = Math.floor(Math.random() * 1_000_000_000);
+                const setHeaderDotPattern = () => {
+                    const masthead = document.querySelector(".masthead");
+                    if (!(masthead instanceof HTMLElement)) {
+                        root.style.setProperty(
+                            "--header-pattern-height",
+                            "0px",
+                        );
+                        return;
+                    }
+                    const headerEnd = masthead.querySelector("h1");
+                    const computed = getComputedStyle(root);
+                    const wrap = document.querySelector(".wrap");
+                    const mastheadRect = masthead.getBoundingClientRect();
+                    const wrapTop =
+                        wrap instanceof HTMLElement
+                            ? wrap.getBoundingClientRect().top
+                            : mastheadRect.top;
+                    const endRect =
+                        headerEnd instanceof HTMLElement
+                            ? headerEnd.getBoundingClientRect()
+                            : mastheadRect;
+                    const height = Math.round(
+                        Math.max(0, endRect.top - wrapTop),
+                    );
+                    root.style.setProperty(
+                        "--header-pattern-height",
+                        `${height}px`,
+                    );
+                    if (height <= 0) {
+                        return;
+                    }
+
+                    const width = Math.round(
+                        Math.max(document.documentElement.clientWidth, 1),
+                    );
+                    const cellValue = parseFloat(
+                        computed.getPropertyValue("--header-dot-cell"),
+                    );
+                    const cell = Math.max(
+                        5,
+                        Number.isFinite(cellValue) ? Math.round(cellValue) : 7,
+                    );
+
+                    let seed = dotSeed;
+                    const rand = () => {
+                        seed = (seed * 1664525 + 1013904223) >>> 0;
+                        return seed / 4294967296;
+                    };
+                    const formatNumber = (value) => value.toFixed(2);
+                    const squirclePath = (centerX, centerY, radius) => {
+                        const size = radius * 2;
+                        const corner = radius * 0.65;
+                        const x = centerX - radius;
+                        const y = centerY - radius;
+                        const endX = x + size;
+                        const endY = y + size;
+                        const cornerX = x + corner;
+                        const cornerY = y + corner;
+                        const cornerX2 = endX - corner;
+                        const cornerY2 = endY - corner;
+                        return [
+                            `M${formatNumber(cornerX)} ${formatNumber(y)}`,
+                            `L${formatNumber(cornerX2)} ${formatNumber(y)}`,
+                            `Q${formatNumber(endX)} ${formatNumber(y)} ${formatNumber(
+                                endX,
+                            )} ${formatNumber(cornerY)}`,
+                            `L${formatNumber(endX)} ${formatNumber(cornerY2)}`,
+                            `Q${formatNumber(endX)} ${formatNumber(endY)} ${formatNumber(
+                                cornerX2,
+                            )} ${formatNumber(endY)}`,
+                            `L${formatNumber(cornerX)} ${formatNumber(endY)}`,
+                            `Q${formatNumber(x)} ${formatNumber(endY)} ${formatNumber(
+                                x,
+                            )} ${formatNumber(cornerY2)}`,
+                            `L${formatNumber(x)} ${formatNumber(cornerY)}`,
+                            `Q${formatNumber(x)} ${formatNumber(y)} ${formatNumber(
+                                cornerX,
+                            )} ${formatNumber(y)}`,
+                            "Z",
+                        ].join(" ");
+                    };
+                    const clamp = (value, min, max) =>
+                        Math.min(max, Math.max(min, value));
+
+                    const columns = Math.ceil(width / cell);
+                    let previousRow = new Array(columns).fill(null);
+                    const phaseA = rand() * Math.PI * 2;
+                    const phaseB = rand() * Math.PI * 2;
+                    const freqA = 0.01 + rand() * 0.02;
+                    const freqB = 0.05 + rand() * 0.08;
+                    const minGap = cell * 0.08;
+                    const svgShapes = [];
+
+                    for (let y = 0; y < height; y += cell) {
+                        const t = y / height;
+                        const falloff = Math.max(0, 1 - t * 1.05);
+                        const wave =
+                            falloff *
+                            (0.12 * Math.sin(y * freqA + phaseA) +
+                                0.08 * Math.sin(y * freqB + phaseB));
+                        const probability = Math.min(
+                            0.6,
+                            Math.max(
+                                0,
+                                (0.2 + 0.38 * falloff) * falloff + wave,
+                            ),
+                        );
+                        const row = new Array(columns).fill(null);
+                        for (let x = 0; x < width; x += cell) {
+                            if (rand() > probability) continue;
+                            const jitter = cell * 0.3;
+                            const cx = x + cell * 0.5 + (rand() - 0.5) * jitter;
+                            const cy = y + cell * 0.5 + (rand() - 0.5) * jitter;
+                            const radius = cell * (0.14 + 0.24 * rand());
+                            const colIndex = Math.floor(x / cell);
+                            let overlaps = false;
+                            for (let dx = -1; dx <= 1; dx += 1) {
+                                const neighbor =
+                                    row[colIndex + dx] ||
+                                    previousRow[colIndex + dx];
+                                if (!neighbor) continue;
+                                const dxp = cx - neighbor.cx;
+                                const dyp = cy - neighbor.cy;
+                                const minDistance =
+                                    radius + neighbor.radius + minGap;
+                                if (
+                                    dxp * dxp + dyp * dyp <
+                                    minDistance * minDistance
+                                ) {
+                                    overlaps = true;
+                                    break;
+                                }
+                            }
+                            if (overlaps) continue;
+                            const alpha = Math.min(1, 0.25 + 0.55 * rand());
+                            const fillAlpha = alpha.toFixed(3);
+                            const outlineAlpha = clamp(alpha * 0.6, 0, 1).toFixed(
+                                3,
+                            );
+                            svgShapes.push(
+                                `<path d="${squirclePath(
+                                    cx,
+                                    cy,
+                                    radius,
+                                )}" fill="rgba(255, 255, 255, ${fillAlpha})" />`,
+                            );
+                            if (radius * 2 >= 5) {
+                                const outlineRadius = radius - 0.5;
+                                if (outlineRadius > 0) {
+                                    svgShapes.push(
+                                        `<path d="${squirclePath(
+                                            cx,
+                                            cy,
+                                            outlineRadius,
+                                        )}" fill="none" stroke="rgba(255, 255, 255, ${outlineAlpha})" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" />`,
+                                    );
+                                }
+                            }
+                            row[colIndex] = { cx, cy, radius };
+                        }
+                        previousRow = row;
+                    }
+
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svgShapes.join(
+                        "",
+                    )}</svg>`;
+                    const encoded = encodeURIComponent(svg);
+                    root.style.setProperty(
+                        "--header-dot-pattern",
+                        `url("data:image/svg+xml,${encoded}")`,
+                    );
+                    root.style.setProperty(
+                        "--header-dot-size",
+                        `${width}px ${height}px`,
+                    );
+                    root.style.setProperty("--header-dot-repeat", "no-repeat");
+                };
+                const scheduleHeaderDots = () => {
+                    if (scheduleHeaderDots.pending) return;
+                    scheduleHeaderDots.pending = true;
+                    window.requestAnimationFrame(() => {
+                        scheduleHeaderDots.pending = false;
+                        setHeaderDotPattern();
+                    });
+                };
+                scheduleHeaderDots.pending = false;
+                setHeaderDotPattern();
+                window.addEventListener("resize", scheduleHeaderDots);
+                window.addEventListener("load", scheduleHeaderDots, {
+                    once: true,
+                });
+                if ("ResizeObserver" in window) {
+                    const observer = new ResizeObserver(() => {
+                        scheduleHeaderDots();
+                    });
+                    const navTarget = document.querySelector(".nav");
+                    const mastheadTarget = document.querySelector(".masthead");
+                    if (navTarget instanceof HTMLElement) {
+                        observer.observe(navTarget);
+                    }
+                    if (mastheadTarget instanceof HTMLElement) {
+                        observer.observe(mastheadTarget);
+                    }
+                }
+                const stored =
+                    typeof localStorage !== "undefined"
+                        ? localStorage.getItem("theme")
+                        : null;
+                const prefersDark =
+                    window.matchMedia &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches;
+                const motionQuery = window.matchMedia
+                    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+                    : null;
+                let prefersReducedMotion = !!(
+                    (motionQuery && motionQuery.matches) ||
+                    !document.startViewTransition
+                );
+                if (
+                    motionQuery &&
+                    typeof motionQuery.addEventListener === "function"
+                ) {
+                    motionQuery.addEventListener("change", (event) => {
+                        prefersReducedMotion = event.matches;
+                    });
+                }
+                const applied =
+                    stored === "dark" || stored === "light"
+                        ? stored
+                        : prefersDark
+                          ? "dark"
+                          : "light";
+
+                const updateThemeColor = () => {
+                    const themeMeta = document.querySelector(
+                        'meta[name="theme-color"]',
+                    );
+                    if (!(themeMeta instanceof HTMLMetaElement)) {
+                        return;
+                    }
+                    const probe = document.createElement("span");
+                    probe.style.color = "var(--red)";
+                    probe.style.position = "fixed";
+                    probe.style.opacity = "0";
+                    probe.style.pointerEvents = "none";
+                    document.body.appendChild(probe);
+                    const color = getComputedStyle(probe).color;
+                    probe.remove();
+                    themeMeta.setAttribute("content", color);
+                };
+
+                const updateToggleLabels = () => {
+                    const current = root.getAttribute("data-theme");
+                    const next = current === "dark" ? "light" : "dark";
+                    document
+                        .querySelectorAll("[data-theme-toggle]")
+                        .forEach((btn) => {
+                            if (!(btn instanceof HTMLElement)) return;
+                            const labelAttr =
+                                btn.getAttribute(`data-theme-label-${next}`) ||
+                                next;
+                            const ariaAttr =
+                                btn.getAttribute(`data-theme-aria-${next}`) ||
+                                `Switch to ${next} mode`;
+                            btn.textContent = labelAttr;
+                            btn.setAttribute("aria-label", ariaAttr);
+                        });
+                };
+
+                root.setAttribute("data-theme", applied);
+                updateToggleLabels();
+                scheduleHeaderDots();
+                updateThemeColor();
+
+                document.addEventListener("click", (event) => {
+                    const target =
+                        event.target instanceof Element
+                            ? event.target.closest("[data-theme-toggle]")
+                            : null;
+                    if (!target) return;
+
+                    const currentTheme =
+                        root.getAttribute("data-theme") === "dark"
+                            ? "dark"
+                            : "light";
+                    const next = currentTheme === "dark" ? "light" : "dark";
+                    if (!prefersReducedMotion) {
+                        const transition = document.startViewTransition(() => {
+                            root.setAttribute("data-theme", next);
+                            updateToggleLabels();
+                            scheduleHeaderDots();
+                            updateThemeColor();
+                            try {
+                                localStorage.setItem("theme", next);
+                            } catch (error) {}
+                        });
+
+                        transition.ready.then(() => {
+                            requestAnimationFrame(() => {
+                                document.documentElement.animate(
+                                    {
+                                        clipPath: [
+                                            "inset(0 0 0 100%)",
+                                            "inset(0 0 0 0%)",
+                                        ],
+                                    },
+                                    {
+                                        duration: 500,
+                                        easing: "ease-in-out",
+                                        pseudoElement:
+                                            "::view-transition-new(root)",
+                                    },
+                                );
+                            });
+                        });
+                    } else {
+                        root.setAttribute("data-theme", next);
+                        updateToggleLabels();
+                        scheduleHeaderDots();
+                        updateThemeColor();
+                        try {
+                            localStorage.setItem("theme", next);
+                        } catch (error) {}
+                    }
+                });
+            })();
+        </script>
+        <slot name="afterBody" />
+    </body>
+</html>
