@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
+    steps:
+      - name: Checkout your repository using git
+        uses: actions/checkout@v4
+      - name: Cache Puppeteer browser
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUPPETEER_CACHE_DIR }}
+          key: ${{ runner.os }}-puppeteer-chrome-131.0.6778.204
+          restore-keys: |
+            ${{ runner.os }}-puppeteer-
+      - name: Install, build, and upload your site output
+        uses: withastro/action@v4
+        env:
+          PUPPETEER_CACHE_DIR: ${{ env.PUPPETEER_CACHE_DIR }}
+        with:
+          build-cmd: npx -y puppeteer@23.11.1 browsers install chrome@131.0.6778.204 && pnpm run pdf:build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
